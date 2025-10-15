@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vaporwave Tetris</title>
+    <link rel="icon" href="favicon.png" type="image/png" />
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: url("vaporwave.gif") center/cover no-repeat fixed;
+            font-family: monospace;
+            color: #00ffff;
+        }
+        canvas, #menu {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #menu {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 14px;
+            white-space: pre;
+        }
+        #menu .start {
+            margin-top: 20px;
+            color: #00ffff;
+            text-shadow: 0 0 4px #00ffff, 0 0 8px #00ffff;
+            font-size: 16px;
+        }
+        canvas {
+            border: 3px solid #00ffff;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 25px #00ffff88, inset 0 0 15px #ff00ff55;
+            display: none;
+        }
+        #ascii-art {
+            transition: transform 0.05s;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <pre id="ascii-art">                                                                                                         
+TTTTTTTTTTTTTTTTTTTTTTT                         tttt                              iiii                   
+T:::::::::::::::::::::T                      ttt:::t                             i::::i                  
+T:::::::::::::::::::::T                      t:::::t                              iiii                   
+T:::::TT:::::::TT:::::T                      t:::::t                                                     
+TTTTTT  T:::::T  TTTTTTeeeeeeeeeeee    ttttttt:::::ttttttt   rrrrr   rrrrrrrrr  iiiiiii     ssssssssss   
+        T:::::T      ee::::::::::::ee  t:::::::::::::::::t   r::::rrr:::::::::r i:::::i   ss::::::::::s  
+        T:::::T     e::::::eeeee:::::eet:::::::::::::::::t   r:::::::::::::::::r i::::i ss:::::::::::::s 
+        T:::::T    e::::::e     e:::::etttttt:::::::tttttt   rr::::::rrrrr::::::ri::::i s::::::ssss:::::s
+        T:::::T    e:::::::eeeee::::::e      t:::::t          r:::::r     r:::::ri::::i  s:::::s  ssssss 
+        T:::::T    e:::::::::::::::::e       t:::::t          r:::::r     rrrrrrri::::i    s::::::s      
+        T:::::T    e::::::eeeeeeeeeee        t:::::t          r:::::r            i::::i       s::::::s   
+        T:::::T    e:::::::e                 t:::::t    ttttttr:::::r            i::::i ssssss   s:::::s 
+      TT:::::::TT  e::::::::e                t::::::tttt:::::tr:::::r           i::::::is:::::ssss::::::s
+      T:::::::::T   e::::::::eeeeeeee        tt::::::::::::::tr:::::r           i::::::is::::::::::::::s 
+      T:::::::::T    ee:::::::::::::e          tt:::::::::::ttr:::::r           i::::::i s:::::::::::ss  
+   TTTTTTTTTT      eeeeeeeeeeeeee            ttttttttttt   rrrrr             iiiiii   sssssssssss </pre>
+  Developed By: GinkleJeff
+        <div class="start">Press ENTER to Begin</div>
+    </div>
+    <canvas id="game" width="300" height="600"></canvas>
+    <script>
+        const menu = document.getElementById('menu');
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const asciiArt = document.getElementById('ascii-art');
+        const originalAscii = asciiArt.textContent;
+        const glitchChars = ['@', '#', '$', '%', '&', '*', '+', '-', '=', '?'];
+
+        // Color interpolation between #ff4500 and #00ffff
+        function interpolateColor(t) {
+            const r1 = 0xff, g1 = 0x45, b1 = 0x00;
+            const r2 = 0x00, g2 = 0xff, b2 = 0xff;
+            const r = Math.round(r1 + (r2 - r1) * t).toString(16).padStart(2, '0');
+            const g = Math.round(g1 + (g2 - g1) * t).toString(16).padStart(2, '0');
+            const b = Math.round(b1 + (b2 - b1) * t).toString(16).padStart(2, '0');
+            return `#${r}${g}${b}`;
+        }
+
+        // Glitch animation
+        let lastTime = 0;
+        let colorPhase = 0;
+        function glitchEffect(timestamp) {
+            if (!menu.style.display || menu.style.display === 'block') {
+                const delta = timestamp - lastTime;
+                if (delta > 100) { // Update every 100ms
+                    lastTime = timestamp;
+                    // Jitter position
+                    const jitterX = (Math.random() - 0.5) * 5;
+                    const jitterY = (Math.random() - 0.5) * 5;
+                    asciiArt.style.transform = `translate(${jitterX}px, ${jitterY}px)`;
+                    // Glitch text
+                    let glitched = originalAscii.split('');
+                    for (let i = 0; i < glitched.length; i++) {
+                        if (Math.random() < 0.05 && glitched[i] !== '\n') {
+                            glitched[i] = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+                        }
+                    }
+                    asciiArt.textContent = glitched.join('');
+                    // Update color
+                    colorPhase = (colorPhase + 0.05) % 1;
+                    const color = interpolateColor(Math.abs(Math.sin(colorPhase * Math.PI)));
+                    asciiArt.style.color = color;
+                    asciiArt.style.textShadow = `0 0 5px ${color}, 0 0 10px ${color}`;
+                }
+                // Reset text occasionally
+                if (Math.random() < 0.02) {
+                    asciiArt.textContent = originalAscii;
+                }
+                requestAnimationFrame(glitchEffect);
+            }
+        }
+        requestAnimationFrame(glitchEffect);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Enter") {
+                menu.style.display = "none";
+                canvas.style.display = "block";
+                startGame();
+            }
+        });
+
+        function startGame() {
+            const ROWS = 20, COLS = 10, BLOCK = canvas.width / COLS;
+            const colors = ['#0ff', '#f0f', '#ff0', '#0f0', '#00f', '#f00', '#ffa500'];
+            const shapes = [
+                [[1,1,1,1]],
+                [[1,1],[1,1]],
+                [[0,1,0],[1,1,1]],
+                [[0,1,1],[1,1,0]],
+                [[1,1,0],[0,1,1]],
+                [[1,1,1],[1,0,0]],
+                [[1,1,1],[0,0,1]],
+            ];
+            let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+            let bag = [], piece = spawn(), savedPiece = null;
+            let dropCounter = 0, dropInterval = 30;
+            let gameOver = false, paused = false, score = 0;
+
+            function spawn() {
+                if (bag.length === 0) bag = [...Array(shapes.length).keys()].sort(() => Math.random() - 0.5);
+                const id = bag.pop();
+                const shape = shapes[id].map(r => [...r]);
+                return {shape, x: Math.floor(COLS/2 - Math.ceil(shape[0].length/2)), y: 0, color: colors[id], id};
+            }
+
+            function drawBlock(x, y, color, alpha=1) {
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = color;
+                ctx.fillRect(x*BLOCK, y*BLOCK, BLOCK, BLOCK);
+                ctx.strokeStyle = '#222';
+                ctx.strokeRect(x*BLOCK, y*BLOCK, BLOCK, BLOCK);
+                ctx.globalAlpha = 1;
+            }
+
+            function drawBoard() {
+                ctx.strokeStyle = '#333';
+                for (let x=0; x<=COLS; x++) {
+                    ctx.beginPath();
+                    ctx.moveTo(x*BLOCK,0);
+                    ctx.lineTo(x*BLOCK,canvas.height);
+                    ctx.stroke();
+                }
+                for (let y=0; y<=ROWS; y++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0,y*BLOCK);
+                    ctx.lineTo(canvas.width,y*BLOCK);
+                    ctx.stroke();
+                }
+                for (let y=0; y<ROWS; y++) for (let x=0; x<COLS; x++) if (board[y][x]) drawBlock(x, y, board[y][x]);
+            }
+
+            function collide(p) {
+                return p.shape.some((r, y) => r.some((v, x) => {
+                    if (!v) return false;
+                    const nx = p.x+x, ny = p.y+y;
+                    return nx < 0 || nx >= COLS || ny >= ROWS || (ny >= 0 && board[ny][nx]);
+                }));
+            }
+
+            function merge(p) {
+                p.shape.forEach((r, y) => r.forEach((v, x) => {
+                    if (v) board[p.y+y][p.x+x] = p.color;
+                }));
+            }
+
+            function clearLines() {
+                let lines = 0;
+                for (let y=ROWS-1; y>=0; y--) {
+                    if (board[y].every(v => v)) {
+                        board.splice(y,1);
+                        board.unshift(Array(COLS).fill(0));
+                        lines++;
+                        y++;
+                    }
+                }
+                if (lines) {
+                    score += [0,100,300,500,800][lines];
+                    dropInterval = Math.max(5, dropInterval - lines);
+                }
+            }
+
+            function rotate(p) {
+                const shape = p.shape[0].map((_, i) => p.shape.map(r => r[i]).reverse());
+                return {...p, shape};
+            }
+
+            function ghostPiece(p) {
+                let gY = p.y;
+                while (!collide({...p, y: gY+1})) gY++;
+                return {...p, y: gY};
+            }
+
+            function drawGhost(p) {
+                const g = ghostPiece(p);
+                g.shape.forEach((r, y) => r.forEach((v, x) => {
+                    if (v) drawBlock(g.x+x, g.y+y, p.color, 0.25);
+                }));
+            }
+
+            function savePiece() {
+                if (!savedPiece) {
+                    savedPiece = {shape: piece.shape.map(r=>[...r]), color: piece.color, id: piece.id};
+                    piece = spawn();
+                } else {
+                    const t = {shape: piece.shape.map(r=>[...r]), color: piece.color, id: piece.id};
+                    piece = {shape: savedPiece.shape.map(r=>[...r]), color: savedPiece.color, id: savedPiece.id, x: piece.x, y:0};
+                    savedPiece = t;
+                }
+            }
+
+            function drawSavedPiece() {
+                if (!savedPiece) return;
+                ctx.fillStyle = '#ffbdf0';
+                ctx.font = '16px monospace';
+                ctx.fillText('SAVED:', 220, 20);
+                savedPiece.shape.forEach((r, y) => r.forEach((v, x) => {
+                    if (v) drawBlock(8+x, y+1, savedPiece.color);
+                }));
+            }
+
+            function tick() {
+                if (collide({...piece, y: piece.y+1})) {
+                    merge(piece);
+                    clearLines();
+                    piece = spawn();
+                    if (collide(piece)) gameOver = true;
+                } else piece.y++;
+            }
+
+            function hardDrop() {
+                while (!collide({...piece, y: piece.y+1})) piece.y++;
+                tick();
+            }
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'p' || e.key === 'P') { paused = !paused; return; }
+                if (paused) return;
+                if (gameOver && e.key === 'r') { location.reload(); }
+                if (e.key === 'ArrowLeft' && !collide({...piece, x: piece.x-1})) piece.x--;
+                if (e.key === 'ArrowRight' && !collide({...piece, x: piece.x+1})) piece.x++;
+                if (e.key === 'ArrowDown') tick();
+                if (e.key === 'ArrowUp') {
+                    const r = rotate(piece);
+                    if (!collide(r)) piece.shape = r.shape;
+                }
+                if (e.key === ' ') hardDrop();
+                if (e.key === 'v' || e.key === 'V') savePiece();
+            });
+
+            function update() {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                drawBoard();
+                ctx.fillStyle = '#ffbdf0';
+                ctx.font = '18px monospace';
+                ctx.fillText('Score: ' + score, 10, 20);
+                if (gameOver) {
+                    ctx.fillStyle = '#ff4500';
+                    ctx.font = '30px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('GAME OVER', canvas.width/2, 280);
+                    ctx.font = '20px monospace';
+                    ctx.fillText('Press R to Restart', canvas.width/2, 320);
+                    ctx.textAlign = 'start';
+                    requestAnimationFrame(update);
+                    return;
+                }
+                if (paused) {
+                    ctx.fillStyle = '#00ffff';
+                    ctx.font = '30px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('PAUSED', canvas.width/2, 300);
+                    ctx.textAlign = 'start';
+                    requestAnimationFrame(update);
+                    return;
+                }
+                drawGhost(piece);
+                piece.shape.forEach((r, y) => r.forEach((v, x) => {
+                    if (v) drawBlock(piece.x+x, piece.y+y, piece.color);
+                }));
+                drawSavedPiece();
+                dropCounter++;
+                if (dropCounter > dropInterval) {
+                    tick();
+                    dropCounter = 0;
+                }
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+    </script>
+</body>
+</html>
