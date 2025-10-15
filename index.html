@@ -72,6 +72,7 @@ TTTTTT  T:::::T  TTTTTTeeeeeeeeeeee    ttttttt:::::ttttttt   rrrrr   rrrrrrrrr  
         <div class="start">Press ENTER to Begin</div>
     </div>
     <canvas id="game" width="300" height="600"></canvas>
+    <audio id="bgm" src="vaportetris.mp3" loop></audio>
     <script>
         const menu = document.getElementById('menu');
         const canvas = document.getElementById('game');
@@ -79,6 +80,21 @@ TTTTTT  T:::::T  TTTTTTeeeeeeeeeeee    ttttttt:::::ttttttt   rrrrr   rrrrrrrrr  
         const asciiArt = document.getElementById('ascii-art');
         const originalAscii = asciiArt.textContent;
         const glitchChars = ['@', '#', '$', '%', '&', '*', '+', '-', '=', '?'];
+        const bgm = document.getElementById('bgm');
+
+        // Attempt to play audio on page load
+        function tryPlayAudio() {
+            bgm.play().catch(error => {
+                console.log("Autoplay blocked, will attempt to play on user interaction:", error);
+            });
+        }
+        tryPlayAudio();
+
+        // Play audio on first user interaction (e.g., keypress)
+        document.addEventListener('keydown', function playOnInteraction(e) {
+            bgm.play().catch(error => console.log("Error playing audio:", error));
+            document.removeEventListener('keydown', playOnInteraction);
+        });
 
         // Color interpolation between #ff4500 and #00ffff
         function interpolateColor(t) {
@@ -155,6 +171,19 @@ TTTTTT  T:::::T  TTTTTTeeeeeeeeeeee    ttttttt:::::ttttttt   rrrrr   rrrrrrrrr  
                 const id = bag.pop();
                 const shape = shapes[id].map(r => [...r]);
                 return {shape, x: Math.floor(COLS/2 - Math.ceil(shape[0].length/2)), y: 0, color: colors[id], id};
+            }
+
+            function resetGame() {
+                board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+                bag = [];
+                piece = spawn();
+                savedPiece = null;
+                dropCounter = 0;
+                dropInterval = 30;
+                gameOver = false;
+                paused = false;
+                score = 0;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
 
             function drawBlock(x, y, color, alpha=1) {
@@ -269,7 +298,10 @@ TTTTTT  T:::::T  TTTTTTeeeeeeeeeeee    ttttttt:::::ttttttt   rrrrr   rrrrrrrrr  
             document.addEventListener('keydown', e => {
                 if (e.key === 'p' || e.key === 'P') { paused = !paused; return; }
                 if (paused) return;
-                if (gameOver && e.key === 'r') { location.reload(); }
+                if (gameOver && (e.key === 'r' || e.key === 'R')) {
+                    resetGame();
+                    return;
+                }
                 if (e.key === 'ArrowLeft' && !collide({...piece, x: piece.x-1})) piece.x--;
                 if (e.key === 'ArrowRight' && !collide({...piece, x: piece.x+1})) piece.x++;
                 if (e.key === 'ArrowDown') tick();
